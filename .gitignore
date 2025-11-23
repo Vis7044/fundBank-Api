@@ -1,0 +1,11 @@
+# Go
+/bin/
+/pkg/
+/out/
+*.exe
+*.exe~
+*.test
+
+# enviroment
+.env
+.env.production
