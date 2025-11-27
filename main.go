@@ -1,17 +1,29 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+
 	"github.com/funcBank_Api/config"
-	// 	"github.com/funcBank_Api/controllers"
-	// 	"github.com/funcBank_Api/repositories"
-	// 	"github.com/funcBank_Api/routes"
-	// 	"github.com/funcBank_Api/services"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
+func SaveJSON(filename string, data interface{}) error {
+	// Pretty printed JSON
+	b, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filename, b, 0644)
+}
+
+
 func main() {
-	//Load environment variables
+	// Load environment variables
 	config.LoadConfig()
 
 	// Connect to database
@@ -21,7 +33,32 @@ func main() {
 	// Initialize router
 	r := gin.Default()
 
-	// Allow CORS for Angular frontend
+	records, err := config.ParseNAVAll("funds.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Take first 10 safely
+	limit := 10
+	if len(records) < 10 {
+		limit = len(records)
+	}
+	firstTen := records[:limit]
+
+	// Print to console
+	for _, rec := range firstTen {
+		fmt.Printf("%+v\n", rec)
+	}
+
+	// Save to JSON file
+	err = SaveJSON("first10.json", firstTen)
+	if err != nil {
+		log.Fatalf("failed to save json: %v", err)
+	}
+
+	fmt.Println("Saved first 10 records to first10.json")
+
+	// Allow CORS
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
