@@ -13,7 +13,8 @@ type SchemeDetail struct {
 	FundHouse      string             `bson:"fund_house" json:"fund_house"`
 	FundHouseKey   string             `bson:"fund_house_key" json:"fund_house_key"`
 	CategoryHeader string             `bson:"category_header" json:"category_header"`
-	CategoryClean  string             `bson:"category_clean" json:"category_clean"`
+	Category       string             `bson:"category" json:"category"`
+	SubCategory    string             `bson:"sub_category" json:"sub_category"`
 	PlanType       string             `bson:"plan_type" json:"plan_type"`
 	OptionType     string             `bson:"option_type" json:"option_type"`
 	Frequency      string             `bson:"frequency" json:"frequency"`

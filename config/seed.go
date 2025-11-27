@@ -7,30 +7,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/funcBank_Api/models"
 )
-
-type SchemeRecord struct {
-	SchemeCode     string
-	ISINGrowth     string
-	ISINReinvest   string
-	SchemeName     string
-
-	ParentName     string
-	ParentKey      string
-	FundHouse      string
-	FundHouseKey   string
-
-	CategoryHeader string
-	CategoryClean  string
-
-	PlanType       string 
-	OptionType     string 
-	Frequency      string 
-	NAV            float64
-	NAVDate        time.Time
-
-	DisplayName    string 
-}
 
 var (
 	planRegex   = regexp.MustCompile(`(?i)direct|regular|retail|institutional`)
@@ -137,17 +116,38 @@ func NormalizeFundHouseKey(s string) string {
 func IsActive(date time.Time) bool {
 	return time.Since(date).Hours() < 24*60 // 60 days
 }
+func ParseCategory(category string) (string, string) {
+    // Extract text inside parentheses
+    start := strings.Index(category, "(")
+    end := strings.LastIndex(category, ")")
+    if start == -1 || end == -1 || end <= start {
+        return "", ""
+    }
+
+    inside := strings.TrimSpace(category[start+1 : end])
+
+    // Split into category and subcategory
+    parts := strings.SplitN(inside, "-", 2)
+    if len(parts) != 2 {
+        return strings.TrimSpace(inside), ""
+    }
+
+    cat := strings.TrimSpace(parts[0])
+    sub := strings.TrimSpace(parts[1])
+    return cat, sub
+}
+
 
 // ---------- MAIN PARSER ----------
 
-func ParseNAVAll(path string) ([]SchemeRecord, error) {
+func ParseNAVAll(path string) ([]models.SchemeDetail, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	var records []SchemeRecord
+	var records []models.SchemeDetail
 	sc := bufio.NewScanner(f)
 
 	var category string
@@ -196,8 +196,8 @@ func ParseNAVAll(path string) ([]SchemeRecord, error) {
 		if IsActive(navDate) == false {
 			continue // skip inactive
 		}
-
-		record := SchemeRecord{
+		mainCat, subCat := ParseCategory(category)
+		record := models.SchemeDetail{
 			SchemeCode:   strings.TrimSpace(parts[0]),
 			ISINGrowth:   strings.TrimSpace(parts[1]),
 			ISINReinvest: strings.TrimSpace(parts[2]),
@@ -210,14 +210,13 @@ func ParseNAVAll(path string) ([]SchemeRecord, error) {
 			FundHouseKey: fundHouseKey,
 
 			CategoryHeader: category,
-			CategoryClean:  strings.TrimPrefix(category, "Open Ended Schemes("), // quick clean
-
+			Category: mainCat,
+			SubCategory: subCat,
 			PlanType: planType,
 			OptionType: optionType,
 			Frequency: frequency,
 
 			NAV:      parseFloat(navVal),
-			NAVDate:  navDate,
 
 			DisplayName: parentName + " (" + planType + " - " + optionType + ")",
 		}
