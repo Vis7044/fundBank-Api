@@ -44,3 +44,7 @@ type FundNav struct {
     Nav  string `json:"nav"`
 }
 
+type FundScheme struct {
+	SchemeCode string `bson:"scheme_code" json:"scheme_code"`
+	SchemeName string `bson:"scheme_name" json:"scheme_name"`
+}

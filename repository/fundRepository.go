@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
 	"github.com/funcBank_Api/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type FundRepo struct {
@@ -60,4 +63,31 @@ func (r *FundRepo) GetFundBySchemeCode(ctx context.Context, schemeCode string, s
     }
 
     return &result, nil
+}
+
+func (r *FundRepo) GetFundsByAMC(ctx context.Context, amcName string) ([]models.FundScheme, error) {
+	filter := struct {
+		Fund_house string `bson:"fund_house"`
+	}{
+		Fund_house: amcName,
+	}
+
+	projection := bson.M{
+		"scheme_name": 1,
+		"scheme_code": 1,
+	}
+	cursor, err := r.fundCollection.Find(ctx, filter, options.Find().SetProjection(projection))
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var funds []models.FundScheme
+	for cursor.Next(ctx) {
+		var fund models.FundScheme
+		if err := cursor.Decode(&fund); err != nil {
+			return nil, err
+		}
+		funds = append(funds, fund)
+	}
+	return funds, nil
 }

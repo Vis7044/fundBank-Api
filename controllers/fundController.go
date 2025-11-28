@@ -37,3 +37,70 @@ func (fc *FundController) GetFundBySchemeCode(ctx *gin.Context) {
 
 	ctx.JSON(200, fund)
 }
+
+
+func (fc *FundController) GetAllAMCs(ctx *gin.Context) {
+	amcs := []string{
+	"All",
+	"Aditya Birla Sun Life Mutual Fund",
+	"Angel One Mutual Fund",
+	"Axis Mutual Fund",
+	"Bajaj Finserv Mutual Fund",
+	"Bandhan Mutual Fund",
+	"Bank of India Mutual Fund",
+	"Baroda BNP Paribas Mutual Fund",
+	"Canara Robeco Mutual Fund",
+	"Capitalmind Mutual Fund",
+	"Choice Mutual Fund",
+	"DSP Mutual Fund",
+	"Edelweiss Mutual Fund",
+	"Franklin Templeton Mutual Fund",
+	"Groww Mutual Fund",
+	"HDFC Mutual Fund",
+	"HSBC Mutual Fund",
+	"Helios Mutual Fund",
+	"ICICI Prudential Mutual Fund",
+	"IL&FS Mutual Fund (IDF)",
+	"ITI Mutual Fund",
+	"Invesco Mutual Fund",
+	"JM Financial Mutual Fund",
+	"Jio BlackRock Mutual Fund",
+	"Kotak Mahindra Mutual Fund",
+	"LIC Mutual Fund",
+	"Mahindra Manulife Mutual Fund",
+	"Mirae Asset Mutual Fund",
+	"Motilal Oswal Mutual Fund",
+	"NJ Mutual Fund",
+	"Navi Mutual Fund",
+	"Nippon India Mutual Fund",
+	"Old Bridge Mutual Fund",
+	"PGIM India Mutual Fund",
+	"PPFAS Mutual Fund",
+	"Quantum Mutual Fund",
+	"SBI Mutual Fund",
+	"Samco Mutual Fund",
+	"Shriram Mutual Fund",
+	"Sundaram Mutual Fund",
+	"Tata Mutual Fund",
+	"Taurus Mutual Fund",
+	"The Wealth Company Mutual Fund",
+	"Trust Mutual Fund",
+	"UTI Mutual Fund",
+	"Unifi Mutual Fund",
+	"Union Mutual Fund",
+	"WhiteOak Capital Mutual Fund",
+	"Zerodha Mutual Fund",
+	"quant Mutual Fund",
+	}
+	ctx.JSON(200, gin.H{"amcs": amcs})
+}
+
+func (fc *FundController) GetFundsByAMC(ctx *gin.Context) {
+	amcName := ctx.Param("amcName")
+	funds, err := fc.fundService.GetFundsByAMC(ctx, amcName)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(200, funds)
+}
