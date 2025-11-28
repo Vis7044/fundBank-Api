@@ -2,8 +2,11 @@ package repository
 
 import (
 	"context"
+
 	"github.com/funcBank_Api/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type FundRepo struct {
@@ -16,20 +19,21 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 	}
 }
 
-
 func (r *FundRepo) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
-	cursor, err := r.fundCollection.Find(ctx, struct{}{})
+	opts := options.Find().SetLimit(200)
+
+	cursor, err := r.fundCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
+
 	var funds []models.SchemeDetail
-	for cursor.Next(ctx) {
-		var fund models.SchemeDetail
-		if err := cursor.Decode(&fund); err != nil {
-			return nil, err
-		}
-		funds = append(funds, fund)
+
+	// Faster way to decode all results at once
+	if err := cursor.All(ctx, &funds); err != nil {
+		return nil, err
 	}
+
 	return funds, nil
 }
