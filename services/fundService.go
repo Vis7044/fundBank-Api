@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/funcBank_Api/models"
 	"github.com/funcBank_Api/repository"
 )
 
@@ -15,6 +16,10 @@ func NewFundService(fundRepo *repository.FundRepo) *FundService {
 	}
 }
 
-func (s *FundService) GetFundBySchemeCode(ctx context.Context, schemeCode string, startDate string, endDate string) (interface{}, error) {
+func (s *FundService) GetFundBySchemeCode(ctx context.Context, schemeCode string, startDate string, endDate string) (*models.FundResponse, error) {
 	return s.fundRepo.GetFundBySchemeCode(ctx, schemeCode, startDate, endDate)
+}
+
+func (s *FundService) GetFundsByAMC(ctx context.Context, amcName string) ([]models.FundScheme, error) {
+	return s.fundRepo.GetFundsByAMC(ctx, amcName)
 }
