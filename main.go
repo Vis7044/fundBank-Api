@@ -28,7 +28,8 @@ func main() {
 	seedController := controllers.NewSeedController(seedService)
 	routes.SeedRoutes(r, seedController)
 
-	//Funds Routes
+
+	// register fund routes
 	fundRepository := repository.NewFundRepo(db)
 	fundService := services.NewFundService(fundRepository)
 	fundController := controllers.NewFundController(fundService)

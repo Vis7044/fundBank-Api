@@ -23,3 +23,28 @@ type SchemeDetail struct {
 	DisplayName    string             `bson:"display_name" json:"display_name"`
 	AmcImg         string             `bson:"amc_img" json:"amc_img"`
 }
+
+type FundResponse struct {
+    Meta FundMeta     `json:"meta"`
+    Data []FundNav    `json:"data"`
+}
+
+type FundMeta struct {
+    FundHouse          string `json:"fund_house"`
+    SchemeType         string `json:"scheme_type"`
+    SchemeCategory     string `json:"scheme_category"`
+    SchemeCode         int     `json:"scheme_code"`
+    SchemeName         string `json:"scheme_name"`
+    ISINGrowth         string `json:"isin_growth"`
+    ISINDivReinvestment string `json:"isin_div_reinvestment"`
+}
+
+type FundNav struct {
+    Date string `json:"date"`
+    Nav  string `json:"nav"`
+}
+
+type FundScheme struct {
+	SchemeCode string `bson:"scheme_code" json:"scheme_code"`
+	SchemeName string `bson:"scheme_name" json:"scheme_name"`
+}
