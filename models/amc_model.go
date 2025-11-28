@@ -9,3 +9,4 @@ type ParentFund struct {
 	Category          string             `bson:"category" json:"category"`
 	ActiveSchemeCodes []int              `bson:"active_scheme_codes" json:"active_scheme_codes"`
 }
+
