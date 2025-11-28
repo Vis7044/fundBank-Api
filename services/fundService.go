@@ -17,7 +17,6 @@ func NewFundService(fundRepo *repository.FundRepo) *FundService {
 	}
 }
 
-
 func (fs *FundService) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
 	return fs.fundRepo.GetAllFunds(ctx)
 }
@@ -30,3 +29,6 @@ func (s *FundService) GetFundsByAMC(ctx context.Context, amcName string) ([]mode
 	return s.fundRepo.GetFundsByAMC(ctx, amcName)
 }
 
+func (fs *FundService) GetFundDetails(ctx context.Context, schemeCode string) (*models.SchemeDetail, error) {
+	return fs.fundRepo.GetFundDetails(ctx, schemeCode)
+}
