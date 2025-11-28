@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 
-
 	"github.com/funcBank_Api/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -44,29 +43,27 @@ func (r *FundRepo) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, erro
 	return funds, nil
 }
 
-
-
 func (r *FundRepo) GetFundBySchemeCode(ctx context.Context, schemeCode string, startDate string, endDate string) (*models.FundResponse, error) {
 
-    url := fmt.Sprintf("https://api.mfapi.in/mf/%s?startDate=%s&endDate=%s", schemeCode, startDate, endDate)
+	url := fmt.Sprintf("https://api.mfapi.in/mf/%s?startDate=%s&endDate=%s", schemeCode, startDate, endDate)
 
-    resp, err := http.Get(url)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        return nil, err
-    }
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-    var result models.FundResponse
-    if err := json.Unmarshal(body, &result); err != nil {
-        return nil, err
-    }
+	var result models.FundResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
 
-    return &result, nil
+	return &result, nil
 }
 
 func (r *FundRepo) GetFundsByAMC(ctx context.Context, amcName string) ([]models.FundScheme, error) {
@@ -96,3 +93,17 @@ func (r *FundRepo) GetFundsByAMC(ctx context.Context, amcName string) ([]models.
 	return funds, nil
 }
 
+func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*models.SchemeDetail, error) {
+
+	filter := bson.M{"scheme_code": schemeCode}
+
+	result := fr.fundCollection.FindOne(ctx, filter)
+
+	var fund models.SchemeDetail
+
+	if err := result.Decode(&fund); err != nil {
+		return nil, err
+	}
+
+	return &fund, nil
+}
