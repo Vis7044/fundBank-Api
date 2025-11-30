@@ -22,19 +22,6 @@ func main() {
 	// Initialize router
 	r := gin.Default()
 
-	// regsiter seed routes
-	seedRepository := repository.NewSeedRepo(db)
-	seedService := services.NewSeedService(seedRepository)
-	seedController := controllers.NewSeedController(seedService)
-	routes.SeedRoutes(r, seedController)
-
-
-	// register fund routes
-	fundRepository := repository.NewFundRepo(db)
-	fundService := services.NewFundService(fundRepository)
-	fundController := controllers.NewFundController(fundService)
-	routes.FundRoutes(r, fundController)
-
 	// Allow CORS
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
@@ -44,6 +31,18 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * 60 * 60,
 	}))
+
+	// regsiter seed routes
+	seedRepository := repository.NewSeedRepo(db)
+	seedService := services.NewSeedService(seedRepository)
+	seedController := controllers.NewSeedController(seedService)
+	routes.SeedRoutes(r, seedController)
+
+	// register fund routes
+	fundRepository := repository.NewFundRepo(db)
+	fundService := services.NewFundService(fundRepository)
+	fundController := controllers.NewFundController(fundService)
+	routes.FundRoutes(r, fundController)
 
 	// Run server
 	r.Run(":8080")
