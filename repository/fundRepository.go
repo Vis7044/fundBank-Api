@@ -27,7 +27,7 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 }
 
 func (r *FundRepo) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
-	opts := options.Find().SetLimit(0)
+	opts := options.Find().SetLimit(200)
 
 	cursor, err := r.fundCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
