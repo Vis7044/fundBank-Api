@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"encoding/json"
 	"fmt"
@@ -25,7 +27,7 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 }
 
 func (r *FundRepo) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
-	opts := options.Find().SetLimit(200)
+	opts := options.Find().SetLimit(0)
 
 	cursor, err := r.fundCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
@@ -91,6 +93,66 @@ func (r *FundRepo) GetFundsByAMC(ctx context.Context, amcName string) ([]models.
 		funds = append(funds, fund)
 	}
 	return funds, nil
+}
+
+func (r *FundRepo) CalculateAndUpdateFundReturns(
+    ctx context.Context,
+    schemeCode string,
+    todayNav *models.FundResponse,
+    oneYearNav *models.FundResponse,
+    threeYearsNav *models.FundResponse,
+    fiveYearsNav *models.FundResponse,
+) error {
+
+    returns := make(map[string]float64)
+
+    getNav := func(navResp *models.FundResponse) (float64, bool) {
+        if navResp == nil || len(navResp.Data) == 0 {
+            return 0, false
+        }
+
+        navStr := strings.TrimSpace(navResp.Data[0].Nav)
+
+        navFloat, err := strconv.ParseFloat(navStr, 64)
+        if err != nil {
+            return 0, false
+        }
+
+        return navFloat, true
+    }
+
+    today, okToday := getNav(todayNav)
+    oneYear, ok1 := getNav(oneYearNav)
+    threeYears, ok3 := getNav(threeYearsNav)
+    fiveYears, ok5 := getNav(fiveYearsNav)
+
+    // Actual calculations
+    if okToday && ok1 && oneYear != 0 {
+        returns["1Year"] = ((today - oneYear) / oneYear) * 100
+    }
+
+    if okToday && ok3 && threeYears != 0 {
+        returns["3Years"] = ((today - threeYears) / threeYears) * 100
+    }
+
+    if okToday && ok5 && fiveYears != 0 {
+        returns["5Years"] = ((today - fiveYears) / fiveYears) * 100
+    }
+    update := bson.M{
+        "$set": bson.M{
+            "1y_return": returns["1Year"],
+            "3y_return": returns["3Years"],
+            "5y_return": returns["5Years"],
+        },
+    }
+
+    _, err := r.fundCollection.UpdateOne(
+        ctx,
+        bson.M{"scheme_code": schemeCode},
+        update,
+    )
+
+    return err
 }
 
 func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*models.SchemeDetail, error) {
