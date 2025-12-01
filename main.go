@@ -17,6 +17,16 @@ import (
 func startServer(db *mongo.Database) {
 	r := gin.Default()
 
+	// CORS
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * 60 * 60,
+	}))
+
 	// seed
 	seedRepo := repository.NewSeedRepo(db)
 	seedService := services.NewSeedService(seedRepo)
@@ -28,16 +38,6 @@ func startServer(db *mongo.Database) {
 	fundService := services.NewFundService(fundRepo)
 	fundController := controllers.NewFundController(fundService)
 	routes.FundRoutes(r, fundController)
-
-	// CORS
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * 60 * 60,
-	}))
 
 	r.Run(":8080")
 }

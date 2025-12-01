@@ -15,9 +15,9 @@ type SchemeDetail struct {
 	CategoryHeader    string             `bson:"category_header" json:"category_header"`
 	Category          string             `bson:"category" json:"category"`
 	SubCategory       string             `bson:"sub_category" json:"sub_category"`
-	Y1Return          float64            `bson:"1y_return" json:"1y_return"`
-	Y3Return          float64            `bson:"3y_return" json:"3y_return"`
-	Y5Return          float64            `bson:"5y_return" json:"5y_return"`
+	Y1Return          float64            `bson:"1y_return" json:"y1_return"`
+	Y3Return          float64            `bson:"3y_return" json:"y3_return"`
+	Y5Return          float64            `bson:"5y_return" json:"y5_return"`
 	ExpenseRatio      float64            `bson:"expense_ratio" json:"expense_ratio"`
 	MinimumInvestment float64            `bson:"minimum_investment" json:"minimum_investment"`
 	PlanType          string             `bson:"plan_type" json:"plan_type"`
