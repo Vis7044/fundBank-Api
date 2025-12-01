@@ -39,6 +39,7 @@ func startServer(db *mongo.Database) {
 	fundController := controllers.NewFundController(fundService)
 	routes.FundRoutes(r, fundController)
 
+	// Run server
 	r.Run(":8080")
 }
 

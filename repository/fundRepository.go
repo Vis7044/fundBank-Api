@@ -155,3 +155,17 @@ func (r *FundRepo) CalculateAndUpdateFundReturns(
     return err
 }
 
+func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*models.SchemeDetail, error) {
+
+	filter := bson.M{"scheme_code": schemeCode}
+
+	result := fr.fundCollection.FindOne(ctx, filter)
+
+	var fund models.SchemeDetail
+
+	if err := result.Decode(&fund); err != nil {
+		return nil, err
+	}
+
+	return &fund, nil
+}
