@@ -15,12 +15,12 @@ type SchemeDetail struct {
 	CategoryHeader    string             `bson:"category_header" json:"category_header"`
 	Category          string             `bson:"category" json:"category"`
 	SubCategory       string             `bson:"sub_category" json:"sub_category"`
-	Y1Return          float64            `bson:"1y_return" json:"y1_return"`
-	Y3Return          float64            `bson:"3y_return" json:"y3_return"`
-	Y5Return          float64            `bson:"5y_return" json:"y5_return"`
-	Y1Nav             float64            `bson:"1y_nav" json:"1y_nav"`
-	Y3Nav             float64            `bson:"3y_nav" json:"3y_nav"`
-	Y5Nav             float64            `bson:"5y_nav" json:"5y_nav"`
+	Y1Return          float64            `bson:"y1_return" json:"y1_return"`
+	Y3Return          float64            `bson:"y3_return" json:"y3_return"`
+	Y5Return          float64            `bson:"y5_return" json:"y5_return"`
+	Y1Nav             float64            `bson:"y1_nav" json:"1y_nav"`
+	Y3Nav             float64            `bson:"y3_nav" json:"3y_nav"`
+	Y5Nav             float64            `bson:"y5_nav" json:"5y_nav"`
 	CAGR1             float64            `bson:"cagr_1y" json:"cagr_1y"`
 	CAGR3             float64            `bson:"cagr_3y" json:"cagr_3y"`
 	CAGR5             float64            `bson:"cagr_5y" json:"cagr_5y"`
@@ -69,12 +69,12 @@ type FundDetail struct {
 	CategoryHeader string  `bson:"category_header" json:"category_header"`
 	Category       string  `bson:"category" json:"category"`
 	SubCategory    string  `bson:"sub_category" json:"sub_category"`
-	Y1Return          float64            `bson:"1y_return" json:"y1_return"`
-	Y3Return          float64            `bson:"3y_return" json:"y3_return"`
-	Y5Return          float64            `bson:"5y_return" json:"y5_return"`
-	Y1Nav             float64            `bson:"1y_nav" json:"1y_nav"`
-	Y3Nav             float64            `bson:"3y_nav" json:"3y_nav"`
-	Y5Nav             float64            `bson:"5y_nav" json:"5y_nav"`
+	Y1Return          float64            `bson:"y1_return" json:"y1_return"`
+	Y3Return          float64            `bson:"y3_return" json:"y3_return"`
+	Y5Return          float64            `bson:"y5_return" json:"y5_return"`
+	Y1Nav             float64            `bson:"y1_nav" json:"y1_nav"`
+	Y3Nav             float64            `bson:"y3_nav" json:"y3_nav"`
+	Y5Nav             float64            `bson:"y5_nav" json:"y5_nav"`
 	CAGR1             float64            `bson:"cagr_1y" json:"cagr_1y"`
 	CAGR3             float64            `bson:"cagr_3y" json:"cagr_3y"`
 	CAGR5             float64            `bson:"cagr_5y" json:"cagr_5y"`

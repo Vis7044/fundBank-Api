@@ -28,7 +28,7 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 }
 
 func (r *FundRepo) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
-	opts := options.Find().SetLimit(200)
+	opts := options.Find()
 
 	cursor, err := r.fundCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
@@ -140,22 +140,39 @@ func (r *FundRepo) CalculateAndUpdateFundReturns(
         returns["5Years"] = ((today - fiveYears) / fiveYears) * 100
     }
 
-	cagr1 := math.Pow(today/oneYear, 1.0/1.0) - 1
-	cagr3 := math.Pow(today/threeYears, 1.0/3.0) - 1
-	cagr5 := math.Pow(today/fiveYears, 1.0/5.0) - 1
-
-	returns["CAGR1"] = cagr1 * 100
-	returns["CAGR3"] = cagr3 * 100
-	returns["CAGR5"] = cagr5 * 100
+	if oneYear!=0 {
+		cagr1 := math.Pow(today/oneYear, 1.0/1.0) - 1
+		returns["CAGR1"] = cagr1 * 100
+	}else {
+		returns["CAGR1"] = 0
+	} 
+	
+	
+	if threeYears!=0 {
+		cagr3 := math.Pow(today/threeYears, 1.0/3.0) - 1
+		returns["CAGR3"] = cagr3 * 100
+	} else {
+		returns["CAGR3"] = 0
+	}
+	
+	
+	if fiveYears!=0 {
+		cagr5 := math.Pow(today/fiveYears, 1.0/5.0) - 1
+		returns["CAGR5"] = cagr5 * 100
+	}else {
+		returns["CAGR5"] = 0
+	}
+	fmt.Println(schemeCode, returns)
 
     update := bson.M{
         "$set": bson.M{
-            "1y_return": returns["1Year"],
-            "3y_return": returns["3Years"],
-            "5y_return": returns["5Years"],
-			"1y_nav": oneYear,
-			"3y_nav": threeYears,
-			"5y_nav": fiveYears,
+            "y1_return": returns["1Year"],
+            "y3_return": returns["3Years"],
+            "y5_return": returns["5Years"],
+			"y1_nav": oneYear,
+			"y3_nav": threeYears,
+			"y5_nav": fiveYears,
+			"nav": today,
 			"cagr_1y": returns["CAGR1"],
 			"cagr_3y": returns["CAGR3"],
 			"cagr_5y": returns["CAGR5"],
