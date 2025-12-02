@@ -9,3 +9,11 @@
 # enviroment
 .env
 .env.production
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+.DS_Store
+*.log
+_debug_bin*

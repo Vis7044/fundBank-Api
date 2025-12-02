@@ -9,6 +9,10 @@ import (
 
 type AppConfig struct {
 	MongoURI string
+	Environment string
+	Frontend    string
+	PORT		string
+	DBName		string
 }
 
 var loaded = false
@@ -25,10 +29,17 @@ func LoadConfig() {
 
 	Cfg = &AppConfig{
 		MongoURI: os.Getenv("MONGO_URI"),
+		Environment: os.Getenv("ENVIRONMENT"),
+		Frontend:    os.Getenv("FRONTEND_URL"),
+		PORT:		os.Getenv("PORT"),
+		DBName:		os.Getenv("DATABASE_NAME"),
 	}
 
 	if Cfg.MongoURI == "" {
 		log.Fatal("MONGO_URI is not set")
+	}
+	if Cfg.Environment == "" {
+		log.Fatal("ENVIRONMENT is not set")
 	}
 	loaded = true
 }

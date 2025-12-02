@@ -19,7 +19,7 @@ func startServer(db *mongo.Database) {
 
 	// CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
+		AllowOrigins:     []string{config.Cfg.Frontend},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -40,13 +40,13 @@ func startServer(db *mongo.Database) {
 	routes.FundRoutes(r, fundController)
 
 	// Run server
-	r.Run(":8080")
+	r.Run(":" + config.Cfg.PORT)
 }
 
 func runCronJobs(fundService *services.FundService) {
 	c := cron.New()
 
-	_, err := c.AddFunc("50 22 * * 1-5", func() {
+	_, err := c.AddFunc("10 21 * * 1-5", func() {
 		log.Println("Running daily return calculation...")
 		fundService.CalculateReturns() 
 		log.Println("Cron Job Completed!")
@@ -62,7 +62,7 @@ func runCronJobs(fundService *services.FundService) {
 func main() {
 	config.LoadConfig()
 	config.ConnectDb()
-	db := config.DB.Client().Database("fundBank")
+	db := config.DB.Client().Database(config.Cfg.DBName)
 
 	// Create repository + service ONCE
 	fundRepo := repository.NewFundRepo(db)
