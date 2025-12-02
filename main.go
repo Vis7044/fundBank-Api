@@ -19,7 +19,7 @@ func startServer(db *mongo.Database) {
 
 	// CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{config.Cfg.Frontend, "https://fund-bank-app.vercel.app/", "http://localhost:3000"},
+		AllowOrigins:     []string{"https://fund-bank-app.vercel.app/", "http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
