@@ -166,6 +166,6 @@ func (s *FundService) CalculateFundReturns(ctx context.Context, schemeCode strin
         fiveYearsNav,
     )
 }
-func (fs *FundService) GetFundDetails(ctx context.Context, schemeCode string) (*models.SchemeDetail, error) {
+func (fs *FundService) GetFundDetails(ctx context.Context, schemeCode string) (*models.FundDetail, error) {
 	return fs.fundRepo.GetFundDetails(ctx, schemeCode)
 }

@@ -133,6 +133,6 @@ func (fc *FundController) GetFundDetails(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, utils.Response[*models.SchemeDetail]{Success: true, Data: fund})
+	ctx.JSON(http.StatusOK, utils.Response[*models.FundDetail]{Success: true, Data: fund})
 
 }
