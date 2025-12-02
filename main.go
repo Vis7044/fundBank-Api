@@ -40,7 +40,7 @@ func startServer(db *mongo.Database) {
 	routes.FundRoutes(r, fundController)
 
 	// Run server
-	r.Run(":" + config.Cfg.PORT)
+	r.Run(":8080")
 }
 
 func runCronJobs(fundService *services.FundService) {
