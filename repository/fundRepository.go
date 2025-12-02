@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"math"
 	"strconv"
 	"strings"
 
@@ -138,11 +139,26 @@ func (r *FundRepo) CalculateAndUpdateFundReturns(
     if okToday && ok5 && fiveYears != 0 {
         returns["5Years"] = ((today - fiveYears) / fiveYears) * 100
     }
+
+	cagr1 := math.Pow(today/oneYear, 1.0/1.0) - 1
+	cagr3 := math.Pow(today/threeYears, 1.0/3.0) - 1
+	cagr5 := math.Pow(today/fiveYears, 1.0/5.0) - 1
+
+	returns["CAGR1"] = cagr1 * 100
+	returns["CAGR3"] = cagr3 * 100
+	returns["CAGR5"] = cagr5 * 100
+
     update := bson.M{
         "$set": bson.M{
             "1y_return": returns["1Year"],
             "3y_return": returns["3Years"],
             "5y_return": returns["5Years"],
+			"1y_nav": oneYear,
+			"3y_nav": threeYears,
+			"5y_nav": fiveYears,
+			"cagr_1y": returns["CAGR1"],
+			"cagr_3y": returns["CAGR3"],
+			"cagr_5y": returns["CAGR5"],
         },
     }
 
@@ -155,13 +171,13 @@ func (r *FundRepo) CalculateAndUpdateFundReturns(
     return err
 }
 
-func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*models.SchemeDetail, error) {
+func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*models.FundDetail, error) {
 
 	filter := bson.M{"scheme_code": schemeCode}
 
 	result := fr.fundCollection.FindOne(ctx, filter)
 
-	var fund models.SchemeDetail
+	var fund models.FundDetail
 
 	if err := result.Decode(&fund); err != nil {
 		return nil, err

@@ -46,7 +46,7 @@ func startServer(db *mongo.Database) {
 func runCronJobs(fundService *services.FundService) {
 	c := cron.New()
 
-	_, err := c.AddFunc("10 21 * * 1-5", func() {
+	_, err := c.AddFunc("50 22 * * 1-5", func() {
 		log.Println("Running daily return calculation...")
 		fundService.CalculateReturns() 
 		log.Println("Cron Job Completed!")
