@@ -169,6 +169,6 @@ func (fs *FundService) GetFundDetails(ctx context.Context, schemeCode string) (*
 	return fs.fundRepo.GetFundDetails(ctx, schemeCode)
 }
 
-func (fs *FundService) GetByCategory(ctx context.Context, category string, page int64, limit int64) ([]*models.FundDetail, error) {
-	return fs.fundRepo.GetByCategory(ctx, category, page, limit)
+func (fs *FundService) GetFundsByCategory(ctx context.Context, category string, page int64, limit int64) ([]*models.FundDetail, error) {
+	return fs.fundRepo.GetFundsByCategory(ctx, category, page, limit)
 }

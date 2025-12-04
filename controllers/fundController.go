@@ -137,7 +137,7 @@ func (fc *FundController) GetFundDetails(ctx *gin.Context) {
 
 }
 
-func (fc *FundController) GetByCategory(ctx *gin.Context) {
+func (fc *FundController) GetFundsByCategory(ctx *gin.Context) {
 	category := ctx.Param("category")
 	page, err := utils.GetQueryInt64(*ctx, "page", 1)
 	if err != nil {
@@ -150,7 +150,7 @@ func (fc *FundController) GetByCategory(ctx *gin.Context) {
 		return
 	}
 
-	funds, err := fc.fundService.GetByCategory(ctx, category, page, limit)
+	funds, err := fc.fundService.GetFundsByCategory(ctx, category, page, limit)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
 		return
