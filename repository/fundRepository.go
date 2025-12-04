@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"math"
 	"strconv"
 	"strings"
 
@@ -28,7 +27,7 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 }
 
 func (r *FundRepo) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
-	opts := options.Find().SetSkip(200)
+	opts := options.Find().SetLimit(200)
 
 	cursor, err := r.fundCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
@@ -97,95 +96,63 @@ func (r *FundRepo) GetFundsByAMC(ctx context.Context, amcName string) ([]models.
 }
 
 func (r *FundRepo) CalculateAndUpdateFundReturns(
-    ctx context.Context,
-    schemeCode string,
-    todayNav *models.FundResponse,
-    oneYearNav *models.FundResponse,
-    threeYearsNav *models.FundResponse,
-    fiveYearsNav *models.FundResponse,
+	ctx context.Context,
+	schemeCode string,
+	todayNav *models.FundResponse,
+	oneYearNav *models.FundResponse,
+	threeYearsNav *models.FundResponse,
+	fiveYearsNav *models.FundResponse,
 ) error {
 
-    returns := make(map[string]float64)
+	returns := make(map[string]float64)
 
-    getNav := func(navResp *models.FundResponse) (float64, bool) {
-        if navResp == nil || len(navResp.Data) == 0 {
-            return 0, false
-        }
+	getNav := func(navResp *models.FundResponse) (float64, bool) {
+		if navResp == nil || len(navResp.Data) == 0 {
+			return 0, false
+		}
 
-        navStr := strings.TrimSpace(navResp.Data[0].Nav)
+		navStr := strings.TrimSpace(navResp.Data[0].Nav)
 
-        navFloat, err := strconv.ParseFloat(navStr, 64)
-        if err != nil {
-            return 0, false
-        }
+		navFloat, err := strconv.ParseFloat(navStr, 64)
+		if err != nil {
+			return 0, false
+		}
 
-        return navFloat, true
-    }
-
-    today, okToday := getNav(todayNav)
-    oneYear, ok1 := getNav(oneYearNav)
-    threeYears, ok3 := getNav(threeYearsNav)
-    fiveYears, ok5 := getNav(fiveYearsNav)
-
-    // Actual calculations
-    if okToday && ok1 && oneYear != 0 {
-        returns["1Year"] = ((today - oneYear) / oneYear) * 100
-    }
-
-    if okToday && ok3 && threeYears != 0 {
-        returns["3Years"] = ((today - threeYears) / threeYears) * 100
-    }
-
-    if okToday && ok5 && fiveYears != 0 {
-        returns["5Years"] = ((today - fiveYears) / fiveYears) * 100
-    }
-
-	if oneYear!=0 {
-		cagr1 := math.Pow(today/oneYear, 1.0/1.0) - 1
-		returns["CAGR1"] = cagr1 * 100
-	}else {
-		returns["CAGR1"] = 0
-	} 
-	
-	
-	if threeYears!=0 {
-		cagr3 := math.Pow(today/threeYears, 1.0/3.0) - 1
-		returns["CAGR3"] = cagr3 * 100
-	} else {
-		returns["CAGR3"] = 0
+		return navFloat, true
 	}
-	
-	
-	if fiveYears!=0 {
-		cagr5 := math.Pow(today/fiveYears, 1.0/5.0) - 1
-		returns["CAGR5"] = cagr5 * 100
-	}else {
-		returns["CAGR5"] = 0
+
+	today, okToday := getNav(todayNav)
+	oneYear, ok1 := getNav(oneYearNav)
+	threeYears, ok3 := getNav(threeYearsNav)
+	fiveYears, ok5 := getNav(fiveYearsNav)
+
+	// Actual calculations
+	if okToday && ok1 && oneYear != 0 {
+		returns["1Year"] = ((today - oneYear) / oneYear) * 100
 	}
-	fmt.Println(schemeCode, returns)
 
-    update := bson.M{
-        "$set": bson.M{
-            "y1_return": returns["1Year"],
-            "y3_return": returns["3Years"],
-            "y5_return": returns["5Years"],
-			"y1_nav": oneYear,
-			"y3_nav": threeYears,
-			"y5_nav": fiveYears,
-			"nav": today,
-			"cagr_1y": returns["CAGR1"],
-			"cagr_3y": returns["CAGR3"],
-			"cagr_5y": returns["CAGR5"],
-        },
-    }
+	if okToday && ok3 && threeYears != 0 {
+		returns["3Years"] = ((today - threeYears) / threeYears) * 100
+	}
 
-    _, err := r.fundCollection.UpdateOne(
-        ctx,
-        bson.M{"scheme_code": schemeCode},
-        update,
-    )
+	if okToday && ok5 && fiveYears != 0 {
+		returns["5Years"] = ((today - fiveYears) / fiveYears) * 100
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"1y_return": returns["1Year"],
+			"3y_return": returns["3Years"],
+			"5y_return": returns["5Years"],
+		},
+	}
 
-    return err
+	_, err := r.fundCollection.UpdateOne(
+		ctx,
+		bson.M{"scheme_code": schemeCode},
+		update,
+	)
+
+	return err
 }
 
 func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*models.FundDetail, error) {
@@ -200,5 +167,38 @@ func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*mod
 		return nil, err
 	}
 
+	//nav5y=NavL/((5y/100)+1)
+
 	return &fund, nil
+}
+
+func (fr *FundRepo) GetFundsByCategory(ctx context.Context, category string, page int64, limit int64) ([]*models.FundDetail, error) {
+
+	if limit <= 0 {
+		limit = 50
+	}
+	if page <= 0 {
+		page = 1
+	}
+
+	skip := (page - 1) * limit
+
+	filter := bson.M{"category": category}
+
+	opts := options.Find().
+		SetSkip(skip).
+		SetLimit(limit)
+
+	cursor, err := fr.fundCollection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var funds []*models.FundDetail
+	if err := cursor.All(ctx, &funds); err != nil {
+		return nil, err
+	}
+
+	return funds, nil
 }

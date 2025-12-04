@@ -136,3 +136,24 @@ func (fc *FundController) GetFundDetails(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, utils.Response[*models.FundDetail]{Success: true, Data: fund})
 
 }
+
+func (fc *FundController) GetByCategory(ctx *gin.Context) {
+	category := ctx.Param("category")
+	page, err := utils.GetQueryInt64(*ctx, "page", 1)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid page parameter"})
+		return
+	}
+	limit, err := utils.GetQueryInt64(*ctx, "limit", 10)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid limit parameter"})
+		return
+	}
+
+	funds, err := fc.fundService.GetByCategory(ctx, category, page, limit)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, utils.Response[[]*models.FundDetail]{Success: true, Data: funds})
+}

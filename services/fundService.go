@@ -37,31 +37,31 @@ func (s *FundService) GetFundsByAMC(ctx context.Context, amcName string) ([]mode
 
 // CalculateReturns processes all funds in batches with controlled concurrency
 func (s *FundService) CalculateReturns() error {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    funds, err := s.fundRepo.GetAllFunds(ctx)
-    if err != nil {
-        return err
-    }
+	funds, err := s.fundRepo.GetAllFunds(ctx)
+	if err != nil {
+		return err
+	}
 
-    batchSize := 500          
-    workerLimit := 30          
-    totalFunds := len(funds)
+	batchSize := 500
+	workerLimit := 30
+	totalFunds := len(funds)
 
-    for start := 0; start < totalFunds; start += batchSize {
-        end := start + batchSize
-        if end > totalFunds {
-            end = totalFunds
-        }
+	for start := 0; start < totalFunds; start += batchSize {
+		end := start + batchSize
+		if end > totalFunds {
+			end = totalFunds
+		}
 
-        batch := funds[start:end]
+		batch := funds[start:end]
 
-        if err := s.processBatch(ctx, batch, workerLimit); err != nil {
-            return err
-        }
-    }
+		if err := s.processBatch(ctx, batch, workerLimit); err != nil {
+			return err
+		}
+	}
 
-    return nil
+	return nil
 }
 
 // processBatch handles a batch of funds with controlled concurrency
@@ -73,47 +73,46 @@ func (s *FundService) CalculateReturns() error {
 // This ensures that at most 'workerLimit' goroutines are running simultaneously.
 // The WaitGroup (wg) is used to wait for all goroutines in the batch to complete before returning.
 func (s *FundService) processBatch(ctx context.Context, batch []models.SchemeDetail, workerLimit int) error {
-    var wg sync.WaitGroup
-    sem := make(chan struct{}, workerLimit)
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, workerLimit)
 
-    for _, fund := range batch {
+	for _, fund := range batch {
 
-        wg.Add(1)
-        sem <- struct{}{} 
+		wg.Add(1)
+		sem <- struct{}{}
 
-        go func() {
-            defer wg.Done()
-            defer func() { <-sem }() 
+		go func() {
+			defer wg.Done()
+			defer func() { <-sem }()
 
-            if err := s.CalculateFundReturns(ctx, fund.SchemeCode); err != nil {
-                fmt.Println("Error calculating returns for", fund.SchemeCode, ":", err)
-            }
-        }()
-    }
+			if err := s.CalculateFundReturns(ctx, fund.SchemeCode); err != nil {
+				fmt.Println("Error calculating returns for", fund.SchemeCode, ":", err)
+			}
+		}()
+	}
 
-    wg.Wait()
-    return nil
+	wg.Wait()
+	return nil
 }
-
 
 func CheckWeekend(date time.Time) time.Time {
-    switch date.Weekday() {
-    case time.Saturday:
-        date = date.AddDate(0, 0, -1) 
-    case time.Sunday:
-        date = date.AddDate(0, 0, -2) 
-    }
-    return date
+	switch date.Weekday() {
+	case time.Saturday:
+		date = date.AddDate(0, 0, -1)
+	case time.Sunday:
+		date = date.AddDate(0, 0, -2)
+	}
+	return date
 }
 
-func LatestNav(shcemeCode string)(*models.FundResponse, error) {
-    url := fmt.Sprintf("https://api.mfapi.in/mf/%s/latest", shcemeCode)
-    resp, err := http.Get(url)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
+func LatestNav(shcemeCode string) (*models.FundResponse, error) {
+	url := fmt.Sprintf("https://api.mfapi.in/mf/%s/latest", shcemeCode)
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -122,50 +121,54 @@ func LatestNav(shcemeCode string)(*models.FundResponse, error) {
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, err
 	}
-    if len(result.Data) == 0 {
-        return nil, fmt.Errorf("no data available")
-    }
-    return &result, nil
+	if len(result.Data) == 0 {
+		return nil, fmt.Errorf("no data available")
+	}
+	return &result, nil
 }
 
 func (s *FundService) CalculateFundReturns(ctx context.Context, schemeCode string) error {
-    today := time.Now()
+	today := time.Now()
 
-    oneYearAgoStr := CheckWeekend(today.AddDate(-1, 0, 0)).Format("2006-01-02")
-    threeYearsAgoStr := CheckWeekend(today.AddDate(-3, 0, 0)).Format("2006-01-02")
-    fiveYearsAgoStr := CheckWeekend(today.AddDate(-5, 0, 0)).Format("2006-01-02")
+	oneYearAgoStr := CheckWeekend(today.AddDate(-1, 0, 0)).Format("2006-01-02")
+	threeYearsAgoStr := CheckWeekend(today.AddDate(-3, 0, 0)).Format("2006-01-02")
+	fiveYearsAgoStr := CheckWeekend(today.AddDate(-5, 0, 0)).Format("2006-01-02")
 
-    // Fetch NAVs
-    todayNav, err := LatestNav(schemeCode)
-    if err != nil {
-        return err
-    }
+	// Fetch NAVs
+	todayNav, err := LatestNav(schemeCode)
+	if err != nil {
+		return err
+	}
 
-    oneYearNav, err := s.fundRepo.GetFundBySchemeCode(ctx, schemeCode, oneYearAgoStr, oneYearAgoStr)
-    if err != nil {
-        return err
-    }
+	oneYearNav, err := s.fundRepo.GetFundBySchemeCode(ctx, schemeCode, oneYearAgoStr, oneYearAgoStr)
+	if err != nil {
+		return err
+	}
 
-    threeYearsNav, err := s.fundRepo.GetFundBySchemeCode(ctx, schemeCode, threeYearsAgoStr, threeYearsAgoStr)
-    if err != nil {
-        return err
-    }
+	threeYearsNav, err := s.fundRepo.GetFundBySchemeCode(ctx, schemeCode, threeYearsAgoStr, threeYearsAgoStr)
+	if err != nil {
+		return err
+	}
 
-    fiveYearsNav, err := s.fundRepo.GetFundBySchemeCode(ctx, schemeCode, fiveYearsAgoStr, fiveYearsAgoStr)
-    if err != nil {
-        return err
-    }
+	fiveYearsNav, err := s.fundRepo.GetFundBySchemeCode(ctx, schemeCode, fiveYearsAgoStr, fiveYearsAgoStr)
+	if err != nil {
+		return err
+	}
 
-    // Calculate and update DB
-    return s.fundRepo.CalculateAndUpdateFundReturns(
-        context.Background(),
-        schemeCode,
-        todayNav,
-        oneYearNav,
-        threeYearsNav,
-        fiveYearsNav,
-    )
+	// Calculate and update DB
+	return s.fundRepo.CalculateAndUpdateFundReturns(
+		context.Background(),
+		schemeCode,
+		todayNav,
+		oneYearNav,
+		threeYearsNav,
+		fiveYearsNav,
+	)
 }
 func (fs *FundService) GetFundDetails(ctx context.Context, schemeCode string) (*models.FundDetail, error) {
 	return fs.fundRepo.GetFundDetails(ctx, schemeCode)
+}
+
+func (fs *FundService) GetByCategory(ctx context.Context, category string, page int64, limit int64) ([]*models.FundDetail, error) {
+	return fs.fundRepo.GetByCategory(ctx, category, page, limit)
 }
