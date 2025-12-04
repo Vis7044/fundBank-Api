@@ -26,8 +26,30 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 	}
 }
 
-func (r *FundRepo) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
-	opts := options.Find().SetLimit(200)
+func (r *FundRepo) GetFunds(ctx context.Context, page, limit int64, sub_category string) ([]models.SchemeDetail, error) {
+	opts := options.Find().SetSkip((page-1)*limit).SetLimit(limit)
+	filter := bson.M{}
+	if sub_category != "" {
+		filter = bson.M{"sub_category": sub_category}
+	}
+	cursor, err := r.fundCollection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var funds []models.SchemeDetail
+
+	// Faster way to decode all results at once
+	if err := cursor.All(ctx, &funds); err != nil {
+		return nil, err
+	}
+
+	return funds, nil
+}
+
+func (r *FundRepo) GetAllFunds(ctx context.Context,) ([]models.SchemeDetail, error) {
+	opts := options.Find()
 
 	cursor, err := r.fundCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
@@ -170,35 +192,4 @@ func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*mod
 	//nav5y=NavL/((5y/100)+1)
 
 	return &fund, nil
-}
-
-func (fr *FundRepo) GetFundsByCategory(ctx context.Context, category string, page int64, limit int64) ([]*models.FundDetail, error) {
-
-	if limit <= 0 {
-		limit = 50
-	}
-	if page <= 0 {
-		page = 1
-	}
-
-	skip := (page - 1) * limit
-
-	filter := bson.M{"category": category}
-
-	opts := options.Find().
-		SetSkip(skip).
-		SetLimit(limit)
-
-	cursor, err := fr.fundCollection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var funds []*models.FundDetail
-	if err := cursor.All(ctx, &funds); err != nil {
-		return nil, err
-	}
-
-	return funds, nil
 }
