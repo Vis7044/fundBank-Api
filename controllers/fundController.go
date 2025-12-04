@@ -1,10 +1,7 @@
 package controllers
 
 import (
-	"context"
 	"net/http"
-	"time"
-
 	"github.com/funcBank_Api/models"
 	"github.com/funcBank_Api/services"
 	"github.com/funcBank_Api/utils"
@@ -23,10 +20,19 @@ func NewFundController(fundService *services.FundService) *FundController {
 
 func (fc *FundController) GetAllFunds(ctx *gin.Context) {
 	// Use a different var name (cxt, mongoCtx, etc.)
-	mongoCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	funds, err := fc.fundService.GetAllFunds(mongoCtx)
+	page, err := utils.GetQueryInt64(*ctx, "page", 1)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid page parameter"})
+		return
+	}
+	limit, err := utils.GetQueryInt64(*ctx, "limit", 10)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid limit parameter"})
+		return
+	}
+	sub_category := ctx.Query("sub_category")
+	
+	funds, err := fc.fundService.GetFunds(ctx, page, limit, sub_category)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
 		return
@@ -135,25 +141,4 @@ func (fc *FundController) GetFundDetails(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, utils.Response[*models.FundDetail]{Success: true, Data: fund})
 
-}
-
-func (fc *FundController) GetFundsByCategory(ctx *gin.Context) {
-	category := ctx.Param("category")
-	page, err := utils.GetQueryInt64(*ctx, "page", 1)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid page parameter"})
-		return
-	}
-	limit, err := utils.GetQueryInt64(*ctx, "limit", 10)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid limit parameter"})
-		return
-	}
-
-	funds, err := fc.fundService.GetFundsByCategory(ctx, category, page, limit)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusOK, utils.Response[[]*models.FundDetail]{Success: true, Data: funds})
 }

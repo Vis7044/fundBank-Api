@@ -23,8 +23,8 @@ func NewFundService(fundRepo *repository.FundRepo) *FundService {
 	}
 }
 
-func (fs *FundService) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
-	return fs.fundRepo.GetAllFunds(ctx)
+func (fs *FundService) GetFunds(ctx context.Context, page, limit int64, sub_category string) ([]models.SchemeDetail, error) {
+	return fs.fundRepo.GetFunds(ctx, page, limit, sub_category)
 }
 
 func (s *FundService) GetFundBySchemeCode(ctx context.Context, schemeCode string, startDate string, endDate string) (*models.FundResponse, error) {
@@ -167,8 +167,4 @@ func (s *FundService) CalculateFundReturns(ctx context.Context, schemeCode strin
 }
 func (fs *FundService) GetFundDetails(ctx context.Context, schemeCode string) (*models.FundDetail, error) {
 	return fs.fundRepo.GetFundDetails(ctx, schemeCode)
-}
-
-func (fs *FundService) GetFundsByCategory(ctx context.Context, category string, page int64, limit int64) ([]*models.FundDetail, error) {
-	return fs.fundRepo.GetFundsByCategory(ctx, category, page, limit)
 }
