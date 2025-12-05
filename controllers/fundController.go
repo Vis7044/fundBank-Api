@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+
 	"github.com/funcBank_Api/models"
 	"github.com/funcBank_Api/services"
 	"github.com/funcBank_Api/utils"
@@ -31,7 +32,7 @@ func (fc *FundController) GetAllFunds(ctx *gin.Context) {
 		return
 	}
 	sub_category := ctx.Query("sub_category")
-	
+
 	funds, err := fc.fundService.GetFunds(ctx, page, limit, sub_category)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
@@ -141,4 +142,14 @@ func (fc *FundController) GetFundDetails(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, utils.Response[*models.FundDetail]{Success: true, Data: fund})
 
+}
+
+func (fc *FundController) SearchFundsByName(ctx *gin.Context) {
+	name := ctx.Query("name")
+	funds, err := fc.fundService.SearchFundsByName(ctx, name)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, utils.Response[[]models.FundScheme]{Success: true, Data: funds})
 }

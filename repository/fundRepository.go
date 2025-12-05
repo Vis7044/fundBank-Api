@@ -27,7 +27,7 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 }
 
 func (r *FundRepo) GetFunds(ctx context.Context, page, limit int64, sub_category string) ([]models.SchemeDetail, error) {
-	opts := options.Find().SetSkip((page-1)*limit).SetLimit(limit)
+	opts := options.Find().SetSkip((page - 1) * limit).SetLimit(limit)
 	filter := bson.M{}
 	if sub_category != "" {
 		filter = bson.M{"sub_category": sub_category}
@@ -48,7 +48,7 @@ func (r *FundRepo) GetFunds(ctx context.Context, page, limit int64, sub_category
 	return funds, nil
 }
 
-func (r *FundRepo) GetAllFunds(ctx context.Context,) ([]models.SchemeDetail, error) {
+func (r *FundRepo) GetAllFunds(ctx context.Context) ([]models.SchemeDetail, error) {
 	opts := options.Find()
 
 	cursor, err := r.fundCollection.Find(ctx, bson.M{}, opts)
@@ -192,4 +192,35 @@ func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*mod
 	//nav5y=NavL/((5y/100)+1)
 
 	return &fund, nil
+}
+
+func (fr *FundRepo) SearchFundsByName(ctx context.Context, name string) ([]models.FundScheme, error) {
+	filter := bson.M{
+		"scheme_name": bson.M{
+			"$regex":   name,
+			"$options": "i",
+		},
+	}
+
+	projection := bson.M{
+		"scheme_name": 1,
+		"scheme_code": 1,
+	}
+
+	cursor, err := fr.fundCollection.Find(ctx, filter, options.Find().SetProjection(projection))
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var funds []models.FundScheme
+	for cursor.Next(ctx) {
+		var fund models.FundScheme
+		if err := cursor.Decode(&fund); err != nil {
+			return nil, err
+		}
+		funds = append(funds, fund)
+	}
+
+	return funds, nil
 }
