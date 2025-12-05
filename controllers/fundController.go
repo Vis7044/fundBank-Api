@@ -145,11 +145,37 @@ func (fc *FundController) GetFundDetails(ctx *gin.Context) {
 }
 
 func (fc *FundController) SearchFundsByName(ctx *gin.Context) {
-	name := ctx.Query("name")
-	funds, err := fc.fundService.SearchFundsByName(ctx, name)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
+	query := ctx.Query("query")
+	if query == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "query parameter is required"})
 		return
 	}
-	ctx.JSON(http.StatusOK, utils.Response[[]models.FundScheme]{Success: true, Data: funds})
+
+	// pagination
+	page, _ := utils.GetQueryInt64(*ctx, "page", 1)
+	limit, _ := utils.GetQueryInt64(*ctx, "limit", 10)
+
+	// sorting
+	sortBy := ctx.DefaultQuery("sortBy", "nav") // default: nav
+	orderStr := ctx.DefaultQuery("order", "desc")
+
+	order := -1
+	if orderStr == "asc" {
+		order = 1
+	}
+
+	results, err := fc.fundService.SearchFundsByName(ctx, query, page, limit, sortBy, order)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    results,
+		"page":    page,
+		"limit":   limit,
+		"sortBy":  sortBy,
+		"order":   orderStr,
+	})
 }

@@ -194,33 +194,33 @@ func (fr *FundRepo) GetFundDetails(ctx context.Context, schemeCode string) (*mod
 	return &fund, nil
 }
 
-func (fr *FundRepo) SearchFundsByName(ctx context.Context, name string) ([]models.FundScheme, error) {
+func (fr *FundRepo) SearchFundsByName(ctx context.Context, query string, page int64, limit int64, sortBy string, order int) ([]models.FundScheme, error) {
+
 	filter := bson.M{
-		"scheme_name": bson.M{
-			"$regex":   name,
+		"display_name": bson.M{
+			"$regex":   query,
 			"$options": "i",
 		},
 	}
 
-	projection := bson.M{
-		"scheme_name": 1,
-		"scheme_code": 1,
-	}
+	// Pagination
+	skip := (page - 1) * limit
 
-	cursor, err := fr.fundCollection.Find(ctx, filter, options.Find().SetProjection(projection))
+	// Sorting
+	findOptions := options.Find()
+	findOptions.SetSkip(int64(skip))
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSort(bson.D{{Key: sortBy, Value: order}})
+
+	cursor, err := fr.fundCollection.Find(ctx, filter, findOptions)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
 
-	var funds []models.FundScheme
-	for cursor.Next(ctx) {
-		var fund models.FundScheme
-		if err := cursor.Decode(&fund); err != nil {
-			return nil, err
-		}
-		funds = append(funds, fund)
+	var results []models.FundScheme
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, err
 	}
 
-	return funds, nil
+	return results, nil
 }
