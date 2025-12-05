@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+
 	"github.com/funcBank_Api/models"
 	"github.com/funcBank_Api/services"
 	"github.com/funcBank_Api/utils"
@@ -30,8 +31,7 @@ func (fc *FundController) GetAllFunds(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid limit parameter"})
 		return
 	}
-	sub_category := ctx.Query("sub_category")
-	
+	sub_category := ctx.QueryArray("category[]")
 	funds, err := fc.fundService.GetFunds(ctx, page, limit, sub_category)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})

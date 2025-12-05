@@ -26,11 +26,11 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 	}
 }
 
-func (r *FundRepo) GetFunds(ctx context.Context, page, limit int64, sub_category string) ([]models.SchemeDetail, error) {
+func (r *FundRepo) GetFunds(ctx context.Context, page, limit int64, sub_category []string) ([]models.SchemeDetail, error) {
 	opts := options.Find().SetSkip((page-1)*limit).SetLimit(limit)
 	filter := bson.M{}
-	if sub_category != "" {
-		filter = bson.M{"sub_category": sub_category}
+	if len(sub_category) > 0 {
+    	filter["sub_category"] = bson.M{"$in": sub_category}
 	}
 	cursor, err := r.fundCollection.Find(ctx, filter, opts)
 	if err != nil {
