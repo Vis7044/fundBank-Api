@@ -169,6 +169,6 @@ func (fs *FundService) GetFundDetails(ctx context.Context, schemeCode string) (*
 	return fs.fundRepo.GetFundDetails(ctx, schemeCode)
 }
 
-func (fs *FundService) SearchFundsByName(ctx context.Context, name string) ([]models.FundScheme, error) {
-	return fs.fundRepo.SearchFundsByName(ctx, name)
+func (fs *FundService) SearchFundsByName(ctx context.Context, name string, page int64, limit int64, sortBy string, order int) ([]models.FundScheme, error) {
+	return fs.fundRepo.SearchFundsByName(ctx, name, page, limit, sortBy, order)
 }
