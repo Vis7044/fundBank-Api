@@ -23,7 +23,7 @@ func NewFundService(fundRepo *repository.FundRepo) *FundService {
 	}
 }
 
-func (fs *FundService) GetFunds(ctx context.Context, page, limit int64, sub_category string) ([]models.SchemeDetail, error) {
+func (fs *FundService) GetFunds(ctx context.Context, page, limit int64, sub_category []string) ([]models.SchemeDetail, error) {
 	return fs.fundRepo.GetFunds(ctx, page, limit, sub_category)
 }
 
