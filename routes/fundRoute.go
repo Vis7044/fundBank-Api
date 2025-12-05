@@ -26,5 +26,7 @@ func FundRoutes(r *gin.Engine, fundController *controllers.FundController) {
 		fundGroup.GET("/amc/:amcName", fundController.GetFundsByAMC)
 		// 	// get fund deatil
 		fundGroup.GET("/fund/:schemeCode", fundController.GetFundDetails)
+
+		fundGroup.GET("/search", fundController.SearchFundsByName)
 	}
 }

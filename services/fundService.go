@@ -168,3 +168,7 @@ func (s *FundService) CalculateFundReturns(ctx context.Context, schemeCode strin
 func (fs *FundService) GetFundDetails(ctx context.Context, schemeCode string) (*models.FundDetail, error) {
 	return fs.fundRepo.GetFundDetails(ctx, schemeCode)
 }
+
+func (fs *FundService) SearchFundsByName(ctx context.Context, name string) ([]models.FundScheme, error) {
+	return fs.fundRepo.SearchFundsByName(ctx, name)
+}
