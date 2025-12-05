@@ -31,7 +31,8 @@ func (fc *FundController) GetAllFunds(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid limit parameter"})
 		return
 	}
-	sub_category := ctx.QueryArray("category[]")
+	sub_category := ctx.Query("sub_category")
+
 	funds, err := fc.fundService.GetFunds(ctx, page, limit, sub_category)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
@@ -141,4 +142,40 @@ func (fc *FundController) GetFundDetails(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, utils.Response[*models.FundDetail]{Success: true, Data: fund})
 
+}
+
+func (fc *FundController) SearchFundsByName(ctx *gin.Context) {
+	query := ctx.Query("query")
+	if query == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "query parameter is required"})
+		return
+	}
+
+	// pagination
+	page, _ := utils.GetQueryInt64(*ctx, "page", 1)
+	limit, _ := utils.GetQueryInt64(*ctx, "limit", 10)
+
+	// sorting
+	sortBy := ctx.DefaultQuery("sortBy", "nav") // default: nav
+	orderStr := ctx.DefaultQuery("order", "desc")
+
+	order := -1
+	if orderStr == "asc" {
+		order = 1
+	}
+
+	results, err := fc.fundService.SearchFundsByName(ctx, query, page, limit, sortBy, order)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    results,
+		"page":    page,
+		"limit":   limit,
+		"sortBy":  sortBy,
+		"order":   orderStr,
+	})
 }
