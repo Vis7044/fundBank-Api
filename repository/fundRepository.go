@@ -26,13 +26,21 @@ func NewFundRepo(db *mongo.Database) *FundRepo {
 	}
 }
 
-func (r *FundRepo) GetFunds(ctx context.Context, page, limit int64, sub_category string) ([]models.SchemeDetail, error) {
-	opts := options.Find().SetSkip((page - 1) * limit).SetLimit(limit)
+func (r *FundRepo) GetFunds(ctx context.Context, page, limit int64, sortBy string, order int, sub_category []string) ([]models.SchemeDetail, error) {
 	filter := bson.M{}
+	// Pagination
+	skip := (page - 1) * limit
+
+	// Sorting
+	findOptions := options.Find()
+	findOptions.SetSkip(int64(skip))
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSort(bson.D{{Key: sortBy, Value: order}})
+
 	if len(sub_category) > 0 {
-    	filter["sub_category"] = bson.M{"$in": sub_category}
+		filter["sub_category"] = bson.M{"$in": sub_category}
 	}
-	cursor, err := r.fundCollection.Find(ctx, filter, opts)
+	cursor, err := r.fundCollection.Find(ctx, filter, findOptions)
 	if err != nil {
 		return nil, err
 	}

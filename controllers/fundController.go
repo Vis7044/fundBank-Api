@@ -31,9 +31,17 @@ func (fc *FundController) GetAllFunds(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: "Invalid limit parameter"})
 		return
 	}
-	sub_category := ctx.Query("sub_category")
+	sub_category := ctx.QueryArray("sub_category")
+	// sorting
+	sortBy := ctx.DefaultQuery("sortBy", "y1_return") // default: nav
+	orderStr := ctx.DefaultQuery("order", "desc")
 
-	funds, err := fc.fundService.GetFunds(ctx, page, limit, sub_category)
+	order := -1
+	if orderStr == "asc" {
+		order = 1
+	}
+
+	funds, err := fc.fundService.GetFunds(ctx, page, limit, sortBy, order, sub_category)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
 		return
@@ -170,12 +178,5 @@ func (fc *FundController) SearchFundsByName(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    results,
-		"page":    page,
-		"limit":   limit,
-		"sortBy":  sortBy,
-		"order":   orderStr,
-	})
+	ctx.JSON(http.StatusOK, utils.Response[[]models.FundScheme]{Success: true, Data: results})
 }
