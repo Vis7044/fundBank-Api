@@ -28,5 +28,6 @@ func FundRoutes(r *gin.Engine, fundController *controllers.FundController) {
 		fundGroup.GET("/fund/:schemeCode", fundController.GetFundDetails)
 
 		fundGroup.GET("/search", fundController.SearchFundsByName)
+		fundGroup.POST("/swp", fundController.SystematicSWPReturnPlan)
 	}
 }

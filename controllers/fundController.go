@@ -180,3 +180,54 @@ func (fc *FundController) SearchFundsByName(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, utils.Response[[]models.FundScheme]{Success: true, Data: results})
 }
+
+func (fc *FundController) SystematicSWPReturnPlan(ctx *gin.Context) {
+	type SWPRequest struct {
+		SchemeCode          string  `json:"scheme_code" binding:"required"`
+		StartDate           string  `json:"start_date" binding:"required"`
+		EndDate             string  `json:"end_date" binding:"required"`
+		TotalInvestedAmount float64 `json:"total_invested_amount" binding:"required"`
+		WithdrawalAmount    float64 `json:"withdrawal_amount" binding:"required"`
+		Interval            string  `json:"interval" binding:"required"` // e.g., "monthly", "quarterly"
+	}
+	var swpReq SWPRequest
+	if err := ctx.ShouldBindJSON(&swpReq); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	//First Call GetFundBySchemeCode to get NAV data for the scheme code within the date range
+	fundNavData, err := fc.fundService.GetFundBySchemeCode(ctx, swpReq.SchemeCode, swpReq.StartDate, swpReq.EndDate)
+	fundNavData.Data = utils.ReverseFundNavSlice(fundNavData.Data)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// but with weekly, fortnightly,quaterly and monthly intervals
+	intervalNav, err := utils.FilterNavByInterval(fundNavData.Data, swpReq.Interval)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to filter NAV data by interval"})
+		return
+	}
+	//Then calculate SWP returns based on the NAV data and the SWP parameters provided in the request body
+	SWPResponse, err := utils.CalculateSWPResponse(intervalNav, swpReq.TotalInvestedAmount, swpReq.WithdrawalAmount)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate SWP returns"})
+		return
+	}
+	//ctx.JSON(http.StatusOK, utils.Response[[]models.SWPResponse]{Success: true, Data: SWPResponse})
+	//Print data in tabular format in an excel file and return the file so that user can download it
+	filePathForSwp, err := utils.ExportSWPResponseToExcel(SWPResponse, swpReq.SchemeCode)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate SWP Excel file"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success":      true,
+		"file_path":    filePathForSwp,
+		"interval_nav": intervalNav,
+		"swp_report":   SWPResponse,
+	})
+
+	//also show data in the response body
+}
