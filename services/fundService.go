@@ -23,8 +23,8 @@ func NewFundService(fundRepo *repository.FundRepo) *FundService {
 	}
 }
 
-func (fs *FundService) GetFunds(ctx context.Context, page, limit int64, sortBy string, order int, sub_category []string) ([]models.SchemeDetail, error) {
-	return fs.fundRepo.GetFunds(ctx, page, limit, sortBy, order, sub_category)
+func (fs *FundService) GetFunds(ctx context.Context, page, limit int64, sortBy string, order int, sub_category []string, fundhouse []string) ([]models.SchemeDetail, error) {
+	return fs.fundRepo.GetFunds(ctx, page, limit, sortBy, order, sub_category,fundhouse)
 }
 
 func (s *FundService) GetFundBySchemeCode(ctx context.Context, schemeCode string, startDate string, endDate string) (*models.FundResponse, error) {
