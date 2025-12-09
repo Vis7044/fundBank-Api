@@ -9,30 +9,74 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func FilterNavByInterval(navData []models.FundNav, interval string) ([]models.FundNav, error) {
+func FilterNavByInterval(navData []models.FundNav, interval string, swpDate int, startDate string) ([]models.FundNav, error) {
 
 	if len(navData) == 0 {
 		return navData, nil
 	}
-	var filteredNav []models.FundNav
-	//Parsing date string to time.Time because in FundNav models it's string
-	// Layout must match the exact input format
-	layout := "02-01-2006"
 
-	parsedDate, err := time.Parse(layout, navData[0].Date)
+	layout := "02-01-2006"
+	layoutISO := "2006-01-02"
+
+	// 1️⃣ Include Investment Date
+	investmentDate, err := time.Parse(layout, navData[0].Date)
 	if err != nil {
 		return nil, err
 	}
-	lastIncludedDate := parsedDate
-	filteredNav = append(filteredNav, navData[0]) // always include the first data point
 
-	// Iterate through the rest of the navData
-	for _, navPoint := range navData[1:] {
+	filteredNav := []models.FundNav{navData[0]}
+	lastIncludedDate := investmentDate
+
+	// 2️⃣ Parse Input Start Date
+	start, err := time.Parse(layoutISO, startDate)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3️⃣ Construct next SWP date based on calendar day
+	var swpDay int = swpDate
+	if swpDay < 1 || swpDay > 28 {
+		return nil, fmt.Errorf("SWP date must be between 1 and 28")
+	}
+
+	// Create SWP date in same month/year as startDate
+	firstSWPDate := time.Date(start.Year(), start.Month(), swpDay, 0, 0, 0, 0, start.Location())
+
+	// If that SWP date is BEFORE start date → move to next month
+	if firstSWPDate.Before(start) {
+		firstSWPDate = firstSWPDate.AddDate(0, 1, 0)
+	}
+
+	// 4️⃣ Find first NAV on or after calculated SWP date
+	var firstSWPNav *models.FundNav
+	for _, nav := range navData {
+		navDate, _ := time.Parse(layout, nav.Date)
+		if !navDate.Before(firstSWPDate) {
+			firstSWPNav = &nav
+			lastIncludedDate = navDate
+			break
+		}
+	}
+
+	// If found, add it
+	if firstSWPNav != nil {
+		filteredNav = append(filteredNav, *firstSWPNav)
+	} else {
+		return filteredNav, nil
+	}
+
+	// 5️⃣ Continue filtering based on interval
+	for _, navPoint := range navData {
 		currentDate, err := time.Parse(layout, navPoint.Date)
 		if err != nil {
 			return nil, err
 		}
-		diff := currentDate.Sub(lastIncludedDate).Hours() / 24 // difference in days
+
+		if currentDate.Before(lastIncludedDate) {
+			continue
+		}
+
+		diff := currentDate.Sub(lastIncludedDate).Hours() / 24
 
 		switch interval {
 		case "weekly":
@@ -56,9 +100,10 @@ func FilterNavByInterval(navData []models.FundNav, interval string) ([]models.Fu
 				lastIncludedDate = currentDate
 			}
 		default:
-			return navData, nil // if interval is unrecognized, return original data
+			return navData, nil
 		}
 	}
+
 	return filteredNav, nil
 }
 
