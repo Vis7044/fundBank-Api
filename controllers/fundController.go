@@ -42,7 +42,7 @@ func (fc *FundController) GetAllFunds(ctx *gin.Context) {
 		order = 1
 	}
 
-	funds, err := fc.fundService.GetFunds(ctx, page, limit, sortBy, order, sub_category,fundhouse)
+	funds, err := fc.fundService.GetFunds(ctx, page, limit, sortBy, order, sub_category, fundhouse)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.Response[string]{Success: false, Data: err.Error()})
 		return
@@ -185,6 +185,8 @@ func (fc *FundController) SearchFundsByName(ctx *gin.Context) {
 func (fc *FundController) SystematicSWPReturnPlan(ctx *gin.Context) {
 	type SWPRequest struct {
 		SchemeCode          string  `json:"scheme_code" binding:"required"`
+		InvestDate          string  `json:"invest_date" binding:"required"`
+		SWPDate             int     `json:"swp_date" binding:"required"`
 		StartDate           string  `json:"start_date" binding:"required"`
 		EndDate             string  `json:"end_date" binding:"required"`
 		TotalInvestedAmount float64 `json:"total_invested_amount" binding:"required"`
@@ -193,18 +195,18 @@ func (fc *FundController) SystematicSWPReturnPlan(ctx *gin.Context) {
 	}
 	var swpReq SWPRequest
 	if err := ctx.ShouldBindJSON(&swpReq); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"This error": err.Error()})
 		return
 	}
 	//First Call GetFundBySchemeCode to get NAV data for the scheme code within the date range
-	fundNavData, err := fc.fundService.GetFundBySchemeCode(ctx, swpReq.SchemeCode, swpReq.StartDate, swpReq.EndDate)
+	fundNavData, err := fc.fundService.GetFundBySchemeCode(ctx, swpReq.SchemeCode, swpReq.InvestDate, swpReq.EndDate)
 	fundNavData.Data = utils.ReverseFundNavSlice(fundNavData.Data)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	// but with weekly, fortnightly,quaterly and monthly intervals
-	intervalNav, err := utils.FilterNavByInterval(fundNavData.Data, swpReq.Interval)
+	intervalNav, err := utils.FilterNavByInterval(fundNavData.Data, swpReq.Interval, swpReq.SWPDate, swpReq.StartDate)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to filter NAV data by interval"})
 		return
