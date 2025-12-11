@@ -120,58 +120,82 @@ func FilterNavByInterval(navData []models.FundNav, interval string, swpDate int,
 		CurrentValue        float64 `json:"current_value"`
 	}
 */
-func CalculateSWPResponse(navData []models.FundNav, total_invested_amount float64, withdrawal_amount float64) ([]models.SWPResponse, error) {
-	var swpResponses []models.SWPResponse
+func CalculateSWPResponse(
+	navData []models.FundNav,
+	totalInvested float64,
+	withdrawal float64,
+) ([]models.SWPResponse, error) {
 
-	var swpResponse models.SWPResponse
-	swpResponse.NetAmount = total_invested_amount
-	swpResponse.CashFlow = total_invested_amount
-	swpResponse.CapitalGainsLoss = 0
-	navValue, err := strconv.ParseFloat(navData[0].Nav, 32)
+	var responses []models.SWPResponse
+
+	// --- FIRST ENTRY (LUMP SUM INVESTMENT) ---
+	firstNAV, err := strconv.ParseFloat(navData[0].Nav, 64)
 	if err != nil {
 		return nil, err
 	}
-	swpResponse.Units = total_invested_amount / navValue
-	swpResponse.CumulativeUnits = swpResponse.Units
-	swpResponse.CurrentValue = swpResponse.CumulativeUnits * navValue
-	swpResponse.CurrentNAV = navValue
-	swpResponse.CurrentDate = navData[0].Date
-	swpResponses = append(swpResponses, swpResponse)
 
+	units := totalInvested / firstNAV
+
+	first := models.SWPResponse{
+		CurrentDate:      navData[0].Date,
+		CurrentNAV:       firstNAV,
+		Units:            units,
+		CumulativeUnits:  units,
+		NetAmount:        totalInvested,
+		CashFlow:         totalInvested, // inflow
+		CurrentValue:     units * firstNAV,
+		CapitalGainsLoss: 0,
+	}
+	responses = append(responses, first)
+
+	// ---- PROCESS SWP WITHDRAWS ----
 	for _, navPoint := range navData[1:] {
-		var swpResponse models.SWPResponse
 
-		navValue, err := strconv.ParseFloat(navPoint.Nav, 32)
+		prev := responses[len(responses)-1]
+
+		navValue, err := strconv.ParseFloat(navPoint.Nav, 64)
 		if err != nil {
 			return nil, err
 		}
-		swpResponse.CurrentNAV = navValue
-		swpResponse.CurrentDate = navPoint.Date
 
-		// Calculate units redeemed
-		unitsRedeemed := withdrawal_amount / navValue
-		flag := false
-		if unitsRedeemed > swpResponses[len(swpResponses)-1].CumulativeUnits {
-			unitsRedeemed = swpResponses[len(swpResponses)-1].CumulativeUnits // can't redeem more than available
-			flag = true
+		// units needed for withdrawal
+		unitsNeeded := withdrawal / navValue
+		actualUnits := unitsNeeded
+		actualCash := withdrawal
+
+		exhausted := false
+
+		// cannot redeem more than available
+		if unitsNeeded > prev.CumulativeUnits {
+			actualUnits = prev.CumulativeUnits
+			actualCash = actualUnits * navValue
+			exhausted = true
 		}
-		swpResponse.Units = -unitsRedeemed
-		swpResponse.CumulativeUnits = swpResponses[len(swpResponses)-1].CumulativeUnits - unitsRedeemed
-		swpResponse.CashFlow = -withdrawal_amount
-		swpResponse.NetAmount = swpResponses[len(swpResponses)-1].NetAmount - withdrawal_amount
 
-		currentValue := swpResponse.CumulativeUnits * navValue
-		capitalGainsLoss := currentValue - swpResponse.NetAmount
-		swpResponse.CurrentValue = currentValue
-		swpResponse.CapitalGainsLoss = capitalGainsLoss
+		cumulativeUnits := prev.CumulativeUnits - actualUnits
+		netAmount := prev.NetAmount - actualCash
+		currentValue := cumulativeUnits * navValue
+		capitalGain := currentValue - netAmount
 
-		swpResponses = append(swpResponses, swpResponse)
-		if flag {
+		entry := models.SWPResponse{
+			CurrentDate:      navPoint.Date,
+			CurrentNAV:       navValue,
+			Units:            -actualUnits,
+			CumulativeUnits:  cumulativeUnits,
+			NetAmount:        netAmount,
+			CashFlow:         -actualCash,
+			CurrentValue:     currentValue,
+			CapitalGainsLoss: capitalGain,
+		}
+
+		responses = append(responses, entry)
+
+		if exhausted {
 			break
 		}
 	}
 
-	return swpResponses, nil
+	return responses, nil
 }
 
 func ExportSWPResponseToExcel(swpResponses []models.SWPResponse, schemeCode string) (string, error) {
